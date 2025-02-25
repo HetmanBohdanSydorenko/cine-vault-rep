@@ -4,6 +4,9 @@ using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
 
+string environmentStr = builder.Environment.EnvironmentName;
+Console.WriteLine(environmentStr);
+
 builder.Services.AddCineVaultDbContext(builder.Configuration);
 
 builder.Services.AddControllers();
@@ -16,6 +19,11 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+}
+
+if (app.Environment.IsLocal())
+{
+    app.UseDeveloperExceptionPage();
 }
 
 app.UseHttpsRedirection();
