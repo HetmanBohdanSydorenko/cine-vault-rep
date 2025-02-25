@@ -10,15 +10,18 @@ namespace CineVault.API.Controllers;
 public sealed class MoviesController : ControllerBase
 {
     private readonly CineVaultDbContext dbContext;
+    private readonly ILogger<MoviesController> logger;
 
-    public MoviesController(CineVaultDbContext dbContext)
+    public MoviesController(CineVaultDbContext dbContext, ILogger<MoviesController> logger)
     {
         this.dbContext = dbContext;
+        this.logger = logger;
     }
 
     [HttpGet]
     public async Task<ActionResult<List<MovieResponse>>> GetMovies()
     {
+        this.logger.LogInformation("Called GetMovies");
         var movies = await this.dbContext.Movies
             .Include(m => m.Reviews)
             .Select(m => new MovieResponse
@@ -42,12 +45,14 @@ public sealed class MoviesController : ControllerBase
     [HttpGet("{id}")]
     public async Task<ActionResult<MovieResponse>> GetMovieById(int id)
     {
+        this.logger.LogInformation("Called GetMovieById with id {MovieId}", id);
         var movie = await this.dbContext.Movies
             .Include(m => m.Reviews)
             .FirstOrDefaultAsync(m => m.Id == id);
 
         if (movie is null)
         {
+            this.logger.LogWarning("Movie with id {MovieId} not found", id);
             return base.NotFound();
         }
 
@@ -71,6 +76,7 @@ public sealed class MoviesController : ControllerBase
     [HttpPost]
     public async Task<ActionResult> CreateMovie(MovieRequest request)
     {
+        this.logger.LogInformation("Called CreateMovie with Title {Title}", request.Title);
         var movie = new Movie
         {
             Title = request.Title,
@@ -82,17 +88,19 @@ public sealed class MoviesController : ControllerBase
 
         await this.dbContext.Movies.AddAsync(movie);
         await this.dbContext.SaveChangesAsync();
-
+        this.logger.LogInformation("Movie created with Title {Title}", movie.Title);
         return base.Created();
     }
 
     [HttpPut("{id}")]
     public async Task<ActionResult> UpdateMovie(int id, MovieRequest request)
     {
+        this.logger.LogInformation("Called UpdateMovie for id {MovieId}", id);
         var movie = await this.dbContext.Movies.FindAsync(id);
 
         if (movie is null)
         {
+            this.logger.LogWarning("UpdateMovie: Movie with id {MovieId} not found", id);
             return base.NotFound();
         }
 
@@ -103,23 +111,25 @@ public sealed class MoviesController : ControllerBase
         movie.Director = request.Director;
 
         await this.dbContext.SaveChangesAsync();
-
+        this.logger.LogInformation("Movie with id {MovieId} updated successfully", id);
         return base.Ok();
     }
 
     [HttpDelete("{id}")]
     public async Task<ActionResult> DeleteMovie(int id)
     {
+        this.logger.LogInformation("Called DeleteMovie for id {MovieId}", id);
         var movie = await this.dbContext.Movies.FindAsync(id);
 
         if (movie is null)
         {
+            this.logger.LogWarning("DeleteMovie: Movie with id {MovieId} not found", id);
             return base.NotFound();
         }
 
         this.dbContext.Movies.Remove(movie);
         await this.dbContext.SaveChangesAsync();
-
+        this.logger.LogInformation("Movie with id {MovieId} deleted successfully", id);
         return base.Ok();
     }
 }
